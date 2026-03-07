@@ -15,7 +15,7 @@ export class UserController {
   ) {}
 
   list = async (req: Request, res: Response): Promise<void> => {
-    const { page, limit, role, isActive } = req.query as Record<string, string>;
+    const { page, limit, role, isActive } = req.query as Record<string, string | undefined>;
     const result = await this.getUsers.execute({
       page: page ? parseInt(page, 10) : undefined,
       limit: limit ? parseInt(limit, 10) : undefined,
@@ -32,13 +32,14 @@ export class UserController {
   };
 
   getById = async (req: Request, res: Response): Promise<void> => {
-    const user = await this.getUserById.execute(req.params.id);
+    const id = String(req.params.id);
+    const user = await this.getUserById.execute(id);
     res.json({ success: true, data: user });
   };
 
   update = async (req: Request, res: Response): Promise<void> => {
     const authReq = req as AuthenticatedRequest;
-    const targetId = req.params.id;
+    const targetId = String(req.params.id);
 
     if (authReq.user.role !== 'admin' && authReq.user.id !== targetId) {
       throw AppError.forbidden('Cannot update another user');
@@ -49,7 +50,7 @@ export class UserController {
   };
 
   remove = async (req: Request, res: Response): Promise<void> => {
-    await this.deleteUser.execute(req.params.id);
+    await this.deleteUser.execute(String(req.params.id));
     res.json({ success: true, message: 'User deleted' });
   };
 }

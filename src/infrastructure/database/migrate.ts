@@ -1,13 +1,14 @@
 import { readdir, readFile } from 'fs/promises';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import type { PoolClient } from 'pg';
 import { pool } from './pool.js';
 import { logger } from '../../shared/logger/logger.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const MIGRATIONS_DIR = join(__dirname, 'migrations');
 
-async function ensureMigrationsTable(client: Awaited<ReturnType<typeof pool.connect>>) {
+async function ensureMigrationsTable(client: PoolClient) {
   await client.query(`
     CREATE TABLE IF NOT EXISTS migrations (
       id         SERIAL PRIMARY KEY,
@@ -17,11 +18,9 @@ async function ensureMigrationsTable(client: Awaited<ReturnType<typeof pool.conn
   `);
 }
 
-async function getAppliedMigrations(
-  client: Awaited<ReturnType<typeof pool.connect>>,
-): Promise<Set<string>> {
+async function getAppliedMigrations(client: PoolClient): Promise<Set<string>> {
   const result = await client.query<{ name: string }>('SELECT name FROM migrations ORDER BY id');
-  return new Set(result.rows.map((r) => r.name));
+  return new Set(result.rows.map((r: { name: string }) => r.name));
 }
 
 export async function runMigrations(): Promise<void> {

@@ -78,7 +78,7 @@ export async function createApp() {
   app.use(`${apiPrefix}/users`, createUserRouter(userController));
 
   if (env.NODE_ENV !== 'production') {
-    const { swaggerSpec } = await import('../docs/swagger.js');
+    const { swaggerSpec } = await import('./swagger.js');
     app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
     app.get('/api/docs.json', (_req, res) => res.json(swaggerSpec));
   }
