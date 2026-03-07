@@ -1,0 +1,70 @@
+services:
+  api:
+    build:
+      context: .
+      target: runner
+    ports:
+      - '3000:3000'
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://postgres:password@postgres:5432/node_api_db
+      JWT_SECRET: ${JWT_SECRET:-change-this-secret-in-production}
+      JWT_ACCESS_EXPIRES_IN: 15m
+      JWT_REFRESH_EXPIRES_IN: 7d
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - api-network
+
+  api-dev:
+    build:
+      context: .
+      target: deps
+    command: npm run dev
+    ports:
+      - '3000:3000'
+    volumes:
+      - .:/app
+      - /app/node_modules
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://postgres:password@postgres:5432/node_api_db
+      JWT_SECRET: dev-secret-key-min-32-chars-required
+      JWT_ACCESS_EXPIRES_IN: 15m
+      JWT_REFRESH_EXPIRES_IN: 7d
+      LOG_LEVEL: debug
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - api-network
+    profiles:
+      - dev
+
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: node_api_db
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - '5432:5432'
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d node_api_db']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - api-network
+
+volumes:
+  postgres-data:
+
+networks:
+  api-network:
+    driver: bridge

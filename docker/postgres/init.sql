@@ -1,0 +1,2 @@
+-- Run migrations on first start
+-- Actual migrations are handled by the application
